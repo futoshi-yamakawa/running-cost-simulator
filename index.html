@@ -1114,6 +1114,12 @@
       $('company').focus();
       return;
     }
+    if (n('equip') <= 0) {
+      alert('設備価格を入力してください');
+      $('equip').focus();
+      return;
+    }
+    calc(); // 印刷前にデータを最新化
     window.print();
   }
 
