@@ -1135,8 +1135,11 @@
     $('elec-rate').value = '30';
     $('hpd').value       = '8';
     elecManual = false;
-    $('elec-auto-hint').textContent = '';
-    $('disp-preview').textContent   = '';
+    $('elec-auto-hint').textContent      = '';
+    $('labor-save-preview').textContent  = '';
+    $('labor-add-preview').textContent   = '';
+    // reset preset button highlights
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     $('iw-company').classList.remove('error');
     $('company-err').classList.remove('show');
     calc();
