@@ -1,0 +1,25 @@
+{
+  "name": "投資回収（簡易版）",
+  "short_name": "回収(簡)",
+  "description": "ランニングコストを除いた簡易版の投資回収試算ツール",
+  "start_url": "./simple.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dc2626",
+  "theme_color": "#dc2626",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icons/icon-simple-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-simple-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

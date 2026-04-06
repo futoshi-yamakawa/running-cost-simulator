@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>投資回収シミュレーター（簡易版）</title>
+  <link rel="manifest" href="manifest-simple.json">
+  <meta name="theme-color" content="#dc2626">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="回収(簡)">
+  <link rel="apple-touch-icon" href="icons/icon-simple-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #dc2626;
+      --blue-d: #991b1b;
+      --blue-l: #fef2f2;
+      --blue-b: #fecaca;
+      --blue-m: #fee2e2;
+      --org:    #ea580c;
+      --org-l:  #fff7ed;
+      --org-b:  #fed7aa;
+      --text:   #0f172a;
+      --sub:    #64748b;
+      --border: #e2e8f0;
+      --bg:     #f1f5f9;
+      --white:  #ffffff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ---- Header ---- */
+    header {
+      background: var(--blue);
+      color: #fff;
+      padding: 14px 20px;
+      padding-top: calc(14px + env(safe-area-inset-top, 0px));
+      text-align: center;
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.02em; }
+    header p  { font-size: 12px; opacity: 0.75; margin-top: 3px; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.25);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ---- Container ---- */
+    .wrap { max-width: 720px; margin: 0 auto; padding: 16px 12px 40px; }
+
+    /* ---- Card ---- */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 14px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card-title svg { color: var(--blue); flex-shrink: 0; }
+
+    .req { color: var(--blue); font-size: 11px; font-weight: 700; margin-left: 4px; }
+
+    /* ---- Fields ---- */
+    .row { display: flex; gap: 10px; }
+    .row .f { flex: 1; min-width: 0; }
+    .f { margin-bottom: 12px; }
+    .f:last-child { margin-bottom: 0; }
+    .f label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--sub); margin-bottom: 5px;
+    }
+    .iw {
+      display: flex; align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; background: #f8fafc; overflow: hidden;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .iw:focus-within { border-color: var(--blue); background: var(--white); }
+    .iw.error { border-color: var(--blue); background: #fff5f5; }
+    .iw input, .iw select {
+      flex: 1; padding: 10px 12px; border: none; background: transparent;
+      font-size: 16px; font-weight: 500; color: var(--text);
+      outline: none; min-width: 0;
+      -webkit-appearance: none; appearance: none;
+    }
+    .iw input::placeholder { color: #cbd5e1; font-weight: 400; }
+    .unit { padding: 0 10px 0 2px; font-size: 11px; color: var(--sub); white-space: nowrap; }
+    .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+    .err-msg { font-size: 11px; color: var(--blue); margin-top: 4px; display: none; }
+    .err-msg.show { display: block; }
+    .auto-hint { font-size: 11px; color: var(--blue); margin-top: 4px; }
+
+    /* Sub-section total */
+    .sub-total {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; padding: 7px 12px;
+      background: var(--blue-l); border-radius: 8px;
+      border: 1px solid var(--blue-b);
+    }
+    .sub-total-label { font-size: 12px; font-weight: 600; color: var(--blue); }
+    .sub-total-value { font-size: 15px; font-weight: 700; color: var(--blue); }
+
+    /* Section total bar */
+    .sec-total {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 14px; padding: 10px 14px;
+      background: var(--blue-l); border: 1.5px solid var(--blue-b);
+      border-radius: 10px;
+    }
+    .sec-total-label { font-size: 13px; font-weight: 600; color: var(--blue); }
+    .sec-total-value { font-size: 18px; font-weight: 700; color: var(--blue); }
+
+    /* Preset buttons */
+    .presets { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .preset-btn {
+      padding: 4px 10px; font-size: 11px; font-weight: 500;
+      border: 1.5px solid var(--blue-b); border-radius: 20px;
+      background: var(--white); color: var(--blue);
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .preset-btn:active, .preset-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    /* Sub-section divider */
+    .sub-hd {
+      font-size: 12px; font-weight: 600; color: var(--text);
+      margin: 16px 0 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .sub-hd::before {
+      content: ''; display: block; width: 3px; height: 14px;
+      background: var(--blue); border-radius: 2px;
+    }
+
+    /* ---- Result card ---- */
+    .card.res   { background: var(--blue-l); border: 1.5px solid var(--blue-b); }
+    .card.res-s { background: var(--org-l);  border: 1.5px solid var(--org-b); }
+    .card.res .card-title   { color: var(--blue); border-bottom-color: var(--blue-b); }
+    .card.res-s .card-title { color: var(--org);  border-bottom-color: var(--org-b); }
+
+    /* Hero banner */
+    .hero {
+      background: var(--blue);
+      border-radius: 12px; padding: 18px 16px; text-align: center;
+      margin-bottom: 14px; color: #fff;
+    }
+    .card.res-s .hero { background: var(--org); }
+    .hero .hl { font-size: 11px; opacity: 0.8; margin-bottom: 4px; }
+    .hero .hv { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .hero .hu { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+    .hero .hm {
+      font-size: 13px; font-weight: 600; margin-top: 12px;
+      background: rgba(255,255,255,0.15); border-radius: 8px; padding: 7px 12px;
+      line-height: 1.5;
+    }
+
+    /* ROI boxes */
+    .roi-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .roi-box {
+      flex: 1; background: var(--white); border-radius: 10px;
+      padding: 12px 10px; text-align: center;
+      border: 1.5px solid var(--blue-b);
+    }
+    .card.res-s .roi-box { border-color: var(--org-b); }
+    .roi-lbl { font-size: 11px; color: var(--sub); margin-bottom: 4px; }
+    .roi-val { font-size: 30px; font-weight: 700; color: var(--blue); line-height: 1; }
+    .card.res-s .roi-val { color: var(--org); }
+    .roi-unit { font-size: 11px; color: var(--sub); margin-top: 3px; }
+
+    /* Cumulative table */
+    .cumul {
+      background: var(--white); border-radius: 10px;
+      border: 1.5px solid var(--blue-b); overflow: hidden; margin-bottom: 14px;
+    }
+    .card.res-s .cumul { border-color: var(--org-b); }
+    .cumul-ttl {
+      background: var(--blue-m); font-size: 12px; font-weight: 700;
+      color: var(--blue-d); padding: 8px 14px;
+    }
+    .card.res-s .cumul-ttl { background: #ffedd5; color: #9a3412; }
+    .cumul-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; border-bottom: 1px solid var(--blue-b); font-size: 13px;
+    }
+    .card.res-s .cumul-row { border-bottom-color: var(--org-b); }
+    .cumul-row:last-child { border-bottom: none; }
+    .cy { color: var(--sub); }
+    .cv { font-weight: 700; font-size: 15px; color: var(--blue); }
+    .card.res-s .cv { color: var(--org); }
+
+    /* Detail rows */
+    .rrow {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 6px 2px; border-bottom: 1px solid rgba(252,165,165,0.25); gap: 8px;
+    }
+    .card.res-s .rrow { border-bottom-color: rgba(253,186,116,0.3); }
+    .rrow:last-child { border-bottom: none; }
+    .rl { color: var(--sub); flex: 1; font-size: 12px; }
+    .rv { font-weight: 600; text-align: right; white-space: nowrap; font-size: 13px; }
+    .rrow.hl .rl { color: var(--blue); font-weight: 700; font-size: 13px; }
+    .rrow.hl .rv { color: var(--blue); font-size: 15px; }
+    .card.res-s .rrow.hl .rl,
+    .card.res-s .rrow.hl .rv { color: var(--org); }
+    .rdiv { border: none; border-top: 1.5px solid rgba(252,165,165,0.4); margin: 6px 0; }
+
+    details summary {
+      font-size: 12px; color: var(--sub); cursor: pointer;
+      user-select: none; padding: 6px 0; list-style: none;
+      display: flex; align-items: center; gap: 4px;
+    }
+    details summary::before { content: '▶'; font-size: 9px; transition: transform 0.2s; }
+    details[open] summary::before { transform: rotate(90deg); }
+
+    .notice {
+      text-align: center; color: var(--sub); font-size: 13px;
+      padding: 20px 0 12px;
+    }
+
+    /* Buttons */
+    .btn-print {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; background: var(--blue);
+      color: #fff; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+    }
+    .btn-print:active { opacity: 0.85; }
+    .btn-clear {
+      width: 100%; padding: 12px; background: var(--white);
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; color: var(--sub); cursor: pointer;
+    }
+
+    /* =========================================================== */
+    /*   PRINT STYLES (A4縦)                                        */
+    /* =========================================================== */
+    @media print {
+      @page { size: A4 portrait; margin: 14mm 18mm; }
+      body { background: white; }
+      header, .wrap { display: none !important; }
+      .ppage { display: block !important; }
+
+      .ppage {
+        font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+        font-size: 10pt; color: #000; line-height: 1.7;
+      }
+
+      .phdr { border-bottom: 2pt solid #dc2626; padding-bottom: 8pt; margin-bottom: 12pt; }
+      .phdr h1 { font-size: 14pt; font-weight: 700; color: #dc2626; margin-bottom: 5pt; }
+      .pmeta { font-size: 9pt; color: #444; display: flex; flex-wrap: wrap; gap: 2pt 18pt; }
+      .pmeta span:empty { display: none; }
+
+      .psec { margin-bottom: 16pt; page-break-inside: avoid; }
+      .psec h2 { font-size: 10pt; font-weight: 700; color: white; padding: 3pt 8pt; margin-bottom: 0; }
+      .psec h2.std { background: #dc2626; }
+      .psec h2.sub { background: #ea580c; }
+
+      table.pt { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 8pt; }
+      table.pt tr { border-bottom: 0.5pt solid #ddd; }
+      table.pt td { padding: 4pt 6pt; vertical-align: top; }
+      table.pt td:last-child { text-align: right; font-weight: 500; }
+      table.pt tr.hl   td { font-weight: 700; background: #fef2f2; }
+      table.pt tr.hl-o td { font-weight: 700; background: #fff7ed; }
+      table.pt tr.sep  td { border-top: 1pt solid #fecaca; }
+      table.pt tr.sep-o td { border-top: 1pt solid #fed7aa; }
+
+      .p-roi { display: flex; gap: 10pt; margin: 8pt 0; }
+      .p-roi-box { flex: 1; border: 1pt solid #fecaca; padding: 6pt 8pt; text-align: center; }
+      .p-roi-box.o { border-color: #fed7aa; }
+      .prbl { font-size: 8pt; color: #555; margin-bottom: 2pt; }
+      .prbv { font-size: 16pt; font-weight: 700; color: #dc2626; }
+      .p-roi-box.o .prbv { color: #ea580c; }
+      .prbu { font-size: 8pt; color: #555; margin-top: 2pt; }
+
+      table.pcumul { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 6pt 0 10pt; }
+      table.pcumul th {
+        font-size: 9pt; font-weight: 700; text-align: left;
+        background: #fef2f2; padding: 4pt 8pt; border: 0.5pt solid #fecaca;
+      }
+      table.pcumul.o th { background: #fff7ed; border-color: #fed7aa; }
+      table.pcumul td { padding: 4pt 8pt; border: 0.5pt solid #fecaca; }
+      table.pcumul.o td { border-color: #fed7aa; }
+      table.pcumul td:nth-child(2) { text-align: right; font-weight: 700; color: #dc2626; }
+      table.pcumul.o td:nth-child(2) { color: #ea580c; }
+
+      .pftr {
+        margin-top: 18pt; padding-top: 6pt;
+        border-top: 0.5pt solid #aaa;
+        font-size: 7.5pt; color: #777; text-align: center;
+      }
+    }
+
+    .ppage { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>投資回収シミュレーター<span class="badge">簡易版</span></h1>
+  <p>ランニングコストを除いた簡易試算</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 顧客・案件情報 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      顧客・案件情報
+    </div>
+    <div class="row">
+      <div class="f">
+        <label>会社名 <span class="req">*必須</span></label>
+        <div class="iw" id="iw-company">
+          <input type="text" id="company" placeholder="株式会社〇〇" oninput="validateCompany()">
+        </div>
+        <div class="err-msg" id="company-err">会社名を入力してください</div>
+      </div>
+      <div class="f">
+        <label>カテゴリ</label>
+        <div class="iw">
+          <select id="category">
+            <option value="破砕機">破砕機</option>
+            <option value="洗浄設備">洗浄設備</option>
+            <option value="選別機">選別機</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="f">
+        <label>機種名</label>
+        <div class="iw"><input type="text" id="model" placeholder="DS4080φ70"></div>
+      </div>
+      <div class="f">
+        <label>素材名 / 材料名</label>
+        <div class="iw"><input type="text" id="material" placeholder="PET、魚網 など"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設備費用 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+      </svg>
+      設備費用
+    </div>
+    <div class="row">
+      <div class="f">
+        <label>設備価格（税抜）</label>
+        <div class="iw">
+          <input type="number" id="equip" inputmode="numeric" placeholder="4600000">
+          <span class="unit">円</span>
+        </div>
+        <div class="auto-hint" id="equip-tax-hint"></div>
+      </div>
+      <div class="f">
+        <label>設置・工事・輸送費等</label>
+        <div class="iw">
+          <input type="number" id="install" inputmode="numeric" placeholder="1000000">
+          <span class="unit">円</span>
+        </div>
+      </div>
+    </div>
+    <div class="f" style="max-width:240px">
+      <label>補助金率（税抜設備価格に対して）</label>
+      <div class="iw">
+        <input type="number" id="subsidy" inputmode="decimal" placeholder="0" min="0" max="100">
+        <span class="unit">%</span>
+      </div>
+      <div class="hint">補助金なしは空欄または 0</div>
+    </div>
+  </div>
+
+  <!-- コスト削減効果 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+      </svg>
+      コスト削減効果（年間）
+    </div>
+
+    <div class="sub-hd">処分費削減（自動計算）</div>
+    <div class="row">
+      <div class="f">
+        <label>処分費単価</label>
+        <div class="iw">
+          <input type="number" id="disp-rate" inputmode="decimal" placeholder="10" step="0.1">
+          <span class="unit">円/kg</span>
+        </div>
+      </div>
+      <div class="f">
+        <label>1日あたり処理量</label>
+        <div class="iw">
+          <input type="number" id="volume" inputmode="decimal" placeholder="1.0" step="0.1">
+          <span class="unit">t/日</span>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="f">
+        <label>年間稼働日数</label>
+        <div class="iw">
+          <input type="number" id="op-days" inputmode="numeric" placeholder="240">
+          <span class="unit">日/年</span>
+        </div>
+        <div class="presets">
+          <button type="button" class="preset-btn" onclick="setDays('op-days',250)">週5 / 250日</button>
+          <button type="button" class="preset-btn" onclick="setDays('op-days',300)">週6 / 300日</button>
+          <button type="button" class="preset-btn" onclick="setDays('op-days',365)">週7 / 365日</button>
+        </div>
+      </div>
+    </div>
+    <div class="sub-total" id="disp-subtotal" style="display:none">
+      <span class="sub-total-label">処分費削減 小計</span>
+      <span class="sub-total-value" id="disp-subtotal-val">—</span>
+    </div>
+
+    <div class="sub-hd" style="margin-top:18px">人件費・その他削減</div>
+    <div class="row">
+      <div class="f">
+        <label>削減される人件費 単価</label>
+        <div class="iw">
+          <input type="number" id="labor-save-rate" inputmode="numeric" placeholder="15000">
+          <span class="unit">円/日</span>
+        </div>
+      </div>
+      <div class="f">
+        <label>年間稼働日数</label>
+        <div class="iw">
+          <input type="number" id="labor-save-days" inputmode="numeric" placeholder="250">
+          <span class="unit">日/年</span>
+        </div>
+        <div class="presets">
+          <button type="button" class="preset-btn" onclick="setDays('labor-save-days',250)">週5 / 250日</button>
+          <button type="button" class="preset-btn" onclick="setDays('labor-save-days',300)">週6 / 300日</button>
+          <button type="button" class="preset-btn" onclick="setDays('labor-save-days',365)">週7 / 365日</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="f">
+        <label>材料購入費用削減（年間）</label>
+        <div class="iw">
+          <input type="number" id="purch-save" inputmode="numeric" placeholder="0">
+          <span class="unit">円/年</span>
+        </div>
+      </div>
+      <div class="f">
+        <label>その他削減効果（年間）</label>
+        <div class="iw">
+          <input type="number" id="other-save" inputmode="numeric" placeholder="0">
+          <span class="unit">円/年</span>
+        </div>
+      </div>
+    </div>
+    <div class="sub-total" id="labor-save-subtotal" style="display:none">
+      <span class="sub-total-label">人件費・その他削減 小計</span>
+      <span class="sub-total-value" id="labor-save-subtotal-val">—</span>
+    </div>
+    <div class="sec-total" id="saving-total" style="display:none">
+      <span class="sec-total-label">コスト削減効果 合計（＝年間純削減効果）</span>
+      <span class="sec-total-value" id="saving-total-val">—</span>
+    </div>
+  </div>
+
+  <!-- ========== RESULT: Standard ========== -->
+  <div class="card res" id="card-std">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      投資回収シミュレーション結果
+    </div>
+    <div class="notice" id="std-notice">設備価格と会社名を入力すると試算結果が表示されます</div>
+    <div id="std-body" style="display:none">
+
+      <div class="hero">
+        <div class="hl">年間削減効果（ランニングコスト除く）</div>
+        <div class="hv" id="r-annual">—</div>
+        <div class="hu">円 / 年</div>
+        <div class="hm" id="r-msg">—</div>
+      </div>
+
+      <div class="roi-row">
+        <div class="roi-box">
+          <div class="roi-lbl">投資回収期間</div>
+          <div class="roi-val" id="r-payback">—</div>
+          <div class="roi-unit">年</div>
+        </div>
+        <div class="roi-box">
+          <div class="roi-lbl">投資利回り（年）</div>
+          <div class="roi-val" id="r-roi">—</div>
+          <div class="roi-unit">%</div>
+        </div>
+      </div>
+
+      <div class="cumul">
+        <div class="cumul-ttl">累積削減効果（初期投資回収後の純利益）</div>
+        <div class="cumul-row">
+          <span class="cy">5年後</span>
+          <span class="cv" id="r-c5">—</span>
+        </div>
+        <div class="cumul-row">
+          <span class="cy">10年後</span>
+          <span class="cv" id="r-c10">—</span>
+        </div>
+        <div class="cumul-row">
+          <span class="cy">15年後</span>
+          <span class="cv" id="r-c15">—</span>
+        </div>
+      </div>
+
+      <details>
+        <summary>試算の詳細</summary>
+        <div id="std-rows" style="margin-top:10px"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ========== RESULT: Subsidy ========== -->
+  <div class="card res-s" id="card-sub" style="display:none">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      補助金適用時 ─ 投資回収シミュレーション
+    </div>
+
+    <div class="hero">
+      <div class="hl">補助金適用後の年間削減効果</div>
+      <div class="hv" id="s-annual">—</div>
+      <div class="hu">円 / 年</div>
+      <div class="hm" id="s-msg">—</div>
+    </div>
+
+    <div class="roi-row">
+      <div class="roi-box">
+        <div class="roi-lbl">投資回収期間（補助後）</div>
+        <div class="roi-val" id="s-payback">—</div>
+        <div class="roi-unit">年</div>
+      </div>
+      <div class="roi-box">
+        <div class="roi-lbl">投資利回り（補助後）</div>
+        <div class="roi-val" id="s-roi">—</div>
+        <div class="roi-unit">%</div>
+      </div>
+    </div>
+
+    <div class="cumul">
+      <div class="cumul-ttl">累積削減効果（補助金適用後の純利益）</div>
+      <div class="cumul-row">
+        <span class="cy">5年後</span>
+        <span class="cv" id="s-c5">—</span>
+      </div>
+      <div class="cumul-row">
+        <span class="cy">10年後</span>
+        <span class="cv" id="s-c10">—</span>
+      </div>
+      <div class="cumul-row">
+        <span class="cy">15年後</span>
+        <span class="cv" id="s-c15">—</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>試算の詳細</summary>
+      <div id="sub-rows" style="margin-top:10px"></div>
+    </details>
+  </div>
+
+  <button class="btn-print" onclick="doPrint()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
+    印刷 / PDF出力（A4縦）
+  </button>
+  <button class="btn-clear" onclick="clearAll()">クリア</button>
+
+</div>
+
+<!-- ======================================= -->
+<!-- PRINT PAGE（画面では非表示）            -->
+<!-- ======================================= -->
+<div class="ppage" id="ppage">
+
+  <div class="phdr">
+    <h1>投資回収シミュレーション 試算書（簡易版・ランニングコストを除く）</h1>
+    <div class="pmeta">
+      <span id="p-company"></span>
+      <span id="p-catmodel"></span>
+      <span id="p-material"></span>
+      <span id="p-date"></span>
+    </div>
+  </div>
+
+  <!-- Standard -->
+  <div class="psec" id="p-std">
+    <h2 class="std">投資回収試算結果（ランニングコストを除く簡易試算）</h2>
+    <table class="pt" id="p-std-tbl"></table>
+    <div class="p-roi">
+      <div class="p-roi-box">
+        <div class="prbl">投資回収期間</div>
+        <div class="prbv" id="p-payback">—</div>
+        <div class="prbu">年</div>
+      </div>
+      <div class="p-roi-box">
+        <div class="prbl">投資利回り（年）</div>
+        <div class="prbv" id="p-roi">—</div>
+        <div class="prbu">%</div>
+      </div>
+    </div>
+    <table class="pcumul" id="p-cumul"></table>
+  </div>
+
+  <!-- Subsidy -->
+  <div class="psec" id="p-sub" style="display:none">
+    <h2 class="sub">補助金適用時のROI試算（補助率<span id="p-subrate">—</span>%・税込ベース）</h2>
+    <table class="pt" id="p-sub-tbl"></table>
+    <div class="p-roi">
+      <div class="p-roi-box o">
+        <div class="prbl">投資回収期間（補助後）</div>
+        <div class="prbv" id="p-s-payback">—</div>
+        <div class="prbu">年</div>
+      </div>
+      <div class="p-roi-box o">
+        <div class="prbl">投資利回り（補助後）</div>
+        <div class="prbv" id="p-s-roi">—</div>
+        <div class="prbu">%</div>
+      </div>
+    </div>
+    <table class="pcumul o" id="p-s-cumul"></table>
+  </div>
+
+  <div class="pftr">
+    ※ 本試算は電気代・メンテナンス費等のランニングコストを含まない簡易版です。実際の収益性は詳細版シミュレーターでご確認ください。概算値であり、実際の効果を保証するものではありません。
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const n = id => parseFloat($(id).value) || 0;
+  const t = id => $(id).value.trim();
+  const fmt  = v => Math.round(v).toLocaleString('ja-JP');
+  const fmtF = (v, d=2) => v.toFixed(d);
+  const man  = v => v >= 10000 ? `約${(v/10000).toFixed(0)}万円` : `${fmt(v)}円`;
+
+  function syncEquipTax() {
+    const ep = n('equip');
+    $('equip-tax-hint').textContent = ep > 0 ? `税込: ${fmt(Math.round(ep * 1.1))}円` : '';
+  }
+
+  function setDays(id, val) {
+    $(id).value = val;
+    const parent = $(id).closest('.f');
+    parent.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.includes(val));
+    });
+    calc();
+  }
+
+  function validateCompany() {
+    const ok = t('company').length > 0;
+    $('iw-company').classList.toggle('error', !ok);
+    $('company-err').classList.toggle('show', !ok && t('company') !== '');
+    calc();
+  }
+
+  function paybackMsg(years) {
+    if (years === null) return '削減効果が見込めない試算です（初期費用を上回る削減効果がありません）';
+    if (years < 3)  return `導入後わずか${fmtF(years)}年で投資回収！ 非常に高い収益性です`;
+    if (years < 5)  return `導入後${fmtF(years)}年で投資回収完了。 高い収益性が見込めます`;
+    if (years < 8)  return `導入後${fmtF(years)}年で投資回収。 安定した長期収益が期待できます`;
+    return `導入後${fmtF(years)}年での回収見込みです`;
+  }
+
+  function cumulText(net, init, years) {
+    const v = net * years - init;
+    if (v >= 0) return `+${man(v)}（黒字）`;
+    return `${man(Math.abs(v))} 回収中`;
+  }
+
+  function renderRows(id, rows) {
+    $(id).innerHTML = rows.map(r => {
+      if (!r) return '<hr class="rdiv">';
+      return `<div class="rrow${r.hl ? ' hl' : ''}">
+        <span class="rl">${r.l}</span>
+        <span class="rv">${r.v}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function setSubTotal(id, valId, val) {
+    if (val > 0) {
+      $(id).style.display = '';
+      $(valId).textContent = `${fmt(val)}円/年`;
+    } else {
+      $(id).style.display = 'none';
+    }
+  }
+
+  function calc() {
+    const company    = t('company');
+    const equipPrice = n('equip');
+
+    const opDays    = n('op-days');
+    const dispRate  = n('disp-rate');
+    const volume    = n('volume');
+    const laborSave = n('labor-save-rate') * n('labor-save-days');
+    const purchSave = n('purch-save');
+    const otherSave = n('other-save');
+
+    const annualDisp   = dispRate * volume * 1000 * opDays;
+    const annualSaving = annualDisp + laborSave + purchSave + otherSave;
+
+    // 常に小計・合計を更新
+    setSubTotal('disp-subtotal',       'disp-subtotal-val',       annualDisp);
+    setSubTotal('labor-save-subtotal', 'labor-save-subtotal-val', laborSave + purchSave + otherSave);
+    setSubTotal('saving-total',        'saving-total-val',        annualSaving);
+
+    if (equipPrice <= 0 || company === '') {
+      $('std-notice').style.display = '';
+      $('std-body').style.display   = 'none';
+      $('card-sub').style.display   = 'none';
+      $('std-notice').textContent   = equipPrice <= 0
+        ? '設備価格と会社名を入力すると試算結果が表示されます'
+        : '会社名を入力してください（必須）';
+      return;
+    }
+
+    $('std-notice').style.display = 'none';
+    $('std-body').style.display   = '';
+
+    const installCost = n('install');
+    const subsidyPct  = n('subsidy');
+    const tax         = equipPrice * 0.1;
+    const equipTax    = equipPrice + tax;
+    const totalInit   = equipTax + installCost;
+    const annualNet   = annualSaving; // ランニングコストなし
+
+    const payback = annualNet > 0 ? totalInit / annualNet : null;
+    const roi     = annualNet > 0 ? annualNet / totalInit * 100 : null;
+
+    $('r-annual').textContent  = fmt(Math.round(annualNet));
+    $('r-payback').textContent = payback ? fmtF(payback) : '—';
+    $('r-roi').textContent     = roi     ? fmtF(roi, 1)  : '—';
+    $('r-msg').textContent     = paybackMsg(payback);
+    $('r-c5').textContent  = cumulText(annualNet, totalInit, 5);
+    $('r-c10').textContent = cumulText(annualNet, totalInit, 10);
+    $('r-c15').textContent = cumulText(annualNet, totalInit, 15);
+
+    const rows = [
+      { l: '設備価格（税抜）',     v: `${fmt(equipPrice)}円` },
+      { l: '消費税（10%）',        v: `${fmt(tax)}円` },
+      { l: '税込設備価格',         v: `${fmt(equipTax)}円` },
+      { l: '設置・工事・輸送費等', v: `${fmt(installCost)}円` },
+      { l: '合計初期費用',         v: `${fmt(totalInit)}円`, hl: true },
+      null,
+      { l: 'コスト削減効果（年間）', v: '' },
+    ];
+    if (dispRate > 0 && volume > 0) rows.push({ l: `　処分費削減（${dispRate}円/kg × ${volume}t/日 × ${opDays}日）`, v: `${fmt(annualDisp)}円` });
+    const lsRate = n('labor-save-rate'), lsDays = n('labor-save-days');
+    if (laborSave > 0)  rows.push({ l: `　人件費削減（${fmt(lsRate)}円/日 × ${lsDays}日）`, v: `${fmt(laborSave)}円` });
+    if (purchSave > 0)  rows.push({ l: '　材料購入費用削減', v: `${fmt(purchSave)}円` });
+    if (otherSave > 0)  rows.push({ l: '　その他削減効果',   v: `${fmt(otherSave)}円` });
+    rows.push({ l: '年間削減効果 合計', v: `${fmt(annualSaving)}円`, hl: true });
+
+    renderRows('std-rows', rows);
+
+    // Subsidy
+    if (subsidyPct > 0) {
+      $('card-sub').style.display = '';
+      const subsidy   = equipPrice * (subsidyPct / 100);
+      const selfEquip = equipTax - subsidy;
+      const selfTotal = selfEquip + installCost;
+      const sPayback  = annualNet > 0 ? selfTotal / annualNet : null;
+      const sRoi      = annualNet > 0 ? annualNet / selfTotal * 100 : null;
+
+      $('s-annual').textContent  = fmt(Math.round(annualNet));
+      $('s-payback').textContent = sPayback ? fmtF(sPayback) : '—';
+      $('s-roi').textContent     = sRoi     ? fmtF(sRoi, 1)  : '—';
+      $('s-msg').textContent     = paybackMsg(sPayback) + `（補助金${subsidyPct}%活用）`;
+      $('s-c5').textContent  = cumulText(annualNet, selfTotal, 5);
+      $('s-c10').textContent = cumulText(annualNet, selfTotal, 10);
+      $('s-c15').textContent = cumulText(annualNet, selfTotal, 15);
+
+      renderRows('sub-rows', [
+        { l: '設備価格（税抜）',               v: `${fmt(equipPrice)}円` },
+        { l: `補助金（税抜の${subsidyPct}%）`, v: `${fmt(subsidy)}円` },
+        { l: '自己負担（設備・税込）',         v: `${fmt(selfEquip)}円` },
+        { l: '設置・工事費等（補助対象外）',   v: `${fmt(installCost)}円` },
+        { l: '自己負担合計',                   v: `${fmt(selfTotal)}円`, hl: true },
+        null,
+        { l: '年間削減効果（変わらず）',       v: `${fmt(annualNet)}円` },
+      ]);
+    } else {
+      $('card-sub').style.display = 'none';
+    }
+
+    buildPrint(equipPrice, tax, equipTax, installCost, totalInit,
+      annualDisp, laborSave, purchSave, otherSave, annualSaving, annualNet,
+      opDays, dispRate, volume, payback, roi, subsidyPct);
+  }
+
+  function buildPrint(ep, tx, etx, ic, ti,
+    aDisp, aLS, aPuS, aOS, aSav, aNet,
+    opD, dr, vol, payback, roi, subPct) {
+
+    const company  = t('company');
+    const category = t('category');
+    const model    = t('model');
+    const material = t('material');
+    const today    = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'});
+
+    $('p-company').textContent  = company  ? `提出先：${company}` : '';
+    $('p-catmodel').textContent = `${category}${model ? ' ' + model : ''}`;
+    $('p-material').textContent = material ? `素材：${material}` : '';
+    $('p-date').textContent     = `試算日：${today}`;
+
+    const stdRows = [
+      ['設備価格（税抜）',     `${fmt(ep)}円`],
+      ['消費税（10%）',        `${fmt(tx)}円`],
+      ['税込設備価格',         `${fmt(etx)}円`],
+      ['設置・工事・輸送費等', `${fmt(ic)}円`],
+      ['合計初期費用',         `${fmt(ti)}円`, 'hl'],
+    ];
+    if (dr > 0 && vol > 0) stdRows.push([`処分費削減（${dr}円/kg × ${vol}t/日 × ${opD}日）`, `${fmt(aDisp)}円`, 'sep']);
+    if (aLS > 0)  stdRows.push(['人件費削減（年間）',       `${fmt(aLS)}円`]);
+    if (aPuS > 0) stdRows.push(['材料購入費用削減（年間）', `${fmt(aPuS)}円`]);
+    if (aOS > 0)  stdRows.push(['その他削減効果（年間）',   `${fmt(aOS)}円`]);
+    stdRows.push(['年間削減効果 合計', `${fmt(aSav)}円`, 'hl sep']);
+
+    $('p-std-tbl').innerHTML = stdRows.map(([l,v,c]) =>
+      `<tr class="${c||''}"><td>${l}</td><td>${v}</td></tr>`
+    ).join('');
+
+    $('p-payback').textContent = payback ? fmtF(payback) : '—';
+    $('p-roi').textContent     = roi     ? fmtF(roi, 1)  : '—';
+
+    $('p-cumul').innerHTML = `
+      <tr><th>期間</th><th>累積削減効果（純利益）</th></tr>
+      <tr><td>5年後</td><td>${cumulText(aNet, ti, 5)}</td></tr>
+      <tr><td>10年後</td><td>${cumulText(aNet, ti, 10)}</td></tr>
+      <tr><td>15年後</td><td>${cumulText(aNet, ti, 15)}</td></tr>
+    `;
+
+    if (subPct > 0) {
+      $('p-sub').style.display = '';
+      $('p-subrate').textContent = subPct;
+      const sub     = ep * (subPct / 100);
+      const selfEq  = etx - sub;
+      const selfTot = selfEq + ic;
+      const sPayback = aNet > 0 ? selfTot / aNet : null;
+      const sRoi     = aNet > 0 ? aNet / selfTot * 100 : null;
+
+      $('p-sub-tbl').innerHTML = [
+        ['設備価格（税抜）',               `${fmt(ep)}円`],
+        [`補助金（${subPct}%、税抜ベース）`,`${fmt(sub)}円`],
+        ['自己負担（設備・税込）',         `${fmt(selfEq)}円`],
+        ['設置・工事費等（補助対象外）',   `${fmt(ic)}円`],
+        ['自己負担合計',                   `${fmt(selfTot)}円`, 'hl-o'],
+        ['年間削減効果（変わらず）',       `${fmt(aNet)}円`, 'sep-o'],
+      ].map(([l,v,c]) => `<tr class="${c||''}"><td>${l}</td><td>${v}</td></tr>`).join('');
+
+      $('p-s-payback').textContent = sPayback ? fmtF(sPayback) : '—';
+      $('p-s-roi').textContent     = sRoi     ? fmtF(sRoi, 1)  : '—';
+
+      $('p-s-cumul').innerHTML = `
+        <tr><th>期間</th><th>累積削減効果（純利益）</th></tr>
+        <tr><td>5年後</td><td>${cumulText(aNet, selfTot, 5)}</td></tr>
+        <tr><td>10年後</td><td>${cumulText(aNet, selfTot, 10)}</td></tr>
+        <tr><td>15年後</td><td>${cumulText(aNet, selfTot, 15)}</td></tr>
+      `;
+    } else {
+      $('p-sub').style.display = 'none';
+    }
+  }
+
+  function doPrint() {
+    if (!t('company')) {
+      $('iw-company').classList.add('error');
+      $('company-err').classList.add('show');
+      $('company').focus();
+      return;
+    }
+    if (n('equip') <= 0) {
+      alert('設備価格を入力してください');
+      $('equip').focus();
+      return;
+    }
+    calc();
+    window.print();
+  }
+
+  function clearAll() {
+    ['company','model','material','equip','install','subsidy',
+     'op-days','disp-rate','volume',
+     'labor-save-rate','labor-save-days','purch-save','other-save'].forEach(id => $(id).value = '');
+    $('category').selectedIndex = 0;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    $('iw-company').classList.remove('error');
+    $('company-err').classList.remove('show');
+    $('equip-tax-hint').textContent = '';
+    calc();
+  }
+
+  /* ---- Listeners ---- */
+  $('equip').addEventListener('input', () => { syncEquipTax(); calc(); });
+
+  ['disp-rate','volume','op-days'].forEach(id =>
+    $(id)?.addEventListener('input', calc)
+  );
+
+  ['company','category','model','material','install','subsidy',
+   'purch-save','other-save'].forEach(id =>
+    $(id)?.addEventListener('input', calc)
+  );
+
+  ['labor-save-rate','labor-save-days'].forEach(id =>
+    $(id)?.addEventListener('input', calc)
+  );
+
+  $('company').addEventListener('blur', () => {
+    if (t('company') === '') {
+      $('iw-company').classList.add('error');
+      $('company-err').classList.add('show');
+    }
+  });
+
+  calc();
+
+  /* ---- ホーム画面アイコン生成（簡易版識別用）---- */
+  (function() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 192;
+    const ctx = c.getContext('2d');
+    // 赤背景
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 0, 192, 192);
+    // 下部帯（白・半透明）
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(0, 128, 192, 64);
+    // 「簡」メインテキスト
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 80px -apple-system, "Hiragino Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('簡', 96, 88);
+    // 「易版」サブテキスト
+    ctx.font = 'bold 26px -apple-system, "Hiragino Sans", sans-serif';
+    ctx.fillText('易　版', 96, 158);
+    // 既存のlink要素を更新
+    const link = document.querySelector('link[rel="apple-touch-icon"]');
+    if (link) link.href = c.toDataURL('image/png');
+  })();
+</script>
+</body>
+</html>
