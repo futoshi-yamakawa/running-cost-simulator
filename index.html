@@ -267,6 +267,11 @@
       border: 1.5px solid var(--border); border-radius: 10px;
       font-size: 14px; color: var(--sub); cursor: pointer;
     }
+    .print-hint {
+      text-align: center; font-size: 11px; color: #94a3b8;
+      margin-top: 10px; line-height: 1.6;
+    }
+    @media print { .print-hint { display: none; } }
 
     /* =========================================================== */
     /*   PRINT STYLES (A4縦)                                        */
@@ -753,6 +758,7 @@
     印刷 / PDF出力（A4縦）
   </button>
   <button class="btn-clear" onclick="clearAll()">クリア</button>
+  <p class="print-hint">印刷時にURLを非表示にするには：印刷ダイアログ →「詳細設定」→「ヘッダーとフッター」のチェックを外す</p>
 
 </div>
 
