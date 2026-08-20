@@ -557,7 +557,7 @@
       <div class="f">
         <label>電気代単価</label>
         <div class="iw">
-          <input type="number" id="elec-rate" inputmode="decimal" placeholder="30" value="30">
+          <input type="number" id="elec-rate" inputmode="decimal" placeholder="30">
           <span class="unit">円/kWh</span>
         </div>
       </div>
@@ -566,7 +566,7 @@
       <div class="f">
         <label>稼働時間</label>
         <div class="iw">
-          <input type="number" id="hpd" inputmode="decimal" placeholder="8" value="8">
+          <input type="number" id="hpd" inputmode="decimal" placeholder="8">
           <span class="unit">時間/日</span>
         </div>
       </div>
@@ -837,7 +837,7 @@
     const auto = n('power') * n('hpd') * (n('op-days') || n('hpd') * 20 * 12 / n('hpd') || 240) * n('elec-rate');
     // simpler: power × hpd × op-days × elec-rate
     const days    = n('op-days') || 240;
-    const autoVal = n('power') * n('hpd') * days * n('elec-rate');
+    const autoVal = n('power') * (n('hpd') || 8) * days * (n('elec-rate') || 30);
     elecAutoVal = autoVal;
     if (!elecManual && autoVal > 0) {
       $('elec-annual').value = Math.round(autoVal);
@@ -1180,8 +1180,8 @@
      'elec-annual','labor-add-rate','labor-add-days','maint','other-cost'].forEach(id => $(id).value = '');
     $('category').selectedIndex = 0;
     $('model-select').selectedIndex = 0;
-    $('elec-rate').value = '30';
-    $('hpd').value       = '8';
+    $('elec-rate').value = '';
+    $('hpd').value       = '';
     elecManual = false;
     $('equip-tax-hint').textContent      = '';
     $('elec-auto-hint').textContent      = '';
