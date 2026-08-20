@@ -358,17 +358,20 @@
     <div class="row">
       <div class="f">
         <label>機種名</label>
-        <div class="iw"><input type="text" id="model" placeholder="DS4080φ70 など自由記述可"></div>
-        <div class="presets" id="model-presets">
-          <button type="button" class="preset-btn" onclick="setModel(this,'DS2260',5000000)">DS2260</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'DS4080',9400000)">DS4080</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'DS40150',15100000)">DS40150</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'TS2160',6100000)">TS2160</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'TS3280',13800000)">TS3280</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'TS32120',16500000)">TS32120</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'ES3280H',4000000)">ES3280H</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'ES4280H',5200000)">ES4280H</button>
-          <button type="button" class="preset-btn" onclick="setModel(this,'ES5280H',9400000)">ES5280H</button>
+        <div class="iw"><input type="text" id="model" placeholder="機種名（直接入力も可）"></div>
+        <div class="iw" style="margin-top:6px">
+          <select id="model-select" onchange="onModelSelect()">
+            <option value="">機種を選択（価格を自動入力）</option>
+            <option value="DS2260"  data-price="5000000" >DS2260（500万円）</option>
+            <option value="DS4080"  data-price="9400000" >DS4080（940万円）</option>
+            <option value="DS40150" data-price="15100000">DS40150（1,510万円）</option>
+            <option value="TS2160"  data-price="6100000" >TS2160（610万円）</option>
+            <option value="TS3280"  data-price="13800000">TS3280（1,380万円）</option>
+            <option value="TS32120" data-price="16500000">TS32120（1,650万円）</option>
+            <option value="ES3280H" data-price="4000000" >ES3280H（400万円）</option>
+            <option value="ES4280H" data-price="5200000" >ES4280H（520万円）</option>
+            <option value="ES5280H" data-price="9400000" >ES5280H（940万円）</option>
+          </select>
         </div>
       </div>
       <div class="f">
@@ -710,11 +713,12 @@
     calc();
   }
 
-  function setModel(btn, name, price) {
-    $('model').value = name;
-    $('equip').value = price;
-    document.querySelectorAll('#model-presets .preset-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  function onModelSelect() {
+    const sel = $('model-select');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt.value) return;
+    $('model').value = opt.value;
+    $('equip').value = opt.dataset.price;
     syncEquipTax();
     calc();
   }
@@ -957,7 +961,7 @@
      'op-days','disp-rate','volume',
      'labor-save-rate','labor-save-days','purch-save','other-save'].forEach(id => $(id).value = '');
     $('category').selectedIndex = 0;
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    $('model-select').selectedIndex = 0;
     $('iw-company').classList.remove('error');
     $('company-err').classList.remove('show');
     $('equip-tax-hint').textContent = '';
@@ -972,7 +976,7 @@
   );
 
   $('model').addEventListener('input', () => {
-    document.querySelectorAll('#model-presets .preset-btn').forEach(b => b.classList.remove('active'));
+    $('model-select').selectedIndex = 0;
     calc();
   });
 
