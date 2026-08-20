@@ -243,6 +243,14 @@
       font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
     }
     .btn-print:active { opacity: 0.85; }
+    .btn-recalc {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px; background: var(--white);
+      border: 1.5px solid var(--blue); border-radius: 12px;
+      font-size: 15px; font-weight: 600; color: var(--blue);
+      cursor: pointer; margin-bottom: 10px;
+    }
+    .btn-recalc:active { background: var(--blue-l); }
     .btn-clear {
       width: 100%; padding: 12px; background: var(--white);
       border: 1.5px solid var(--border); border-radius: 10px;
@@ -350,7 +358,18 @@
     <div class="row">
       <div class="f">
         <label>機種名</label>
-        <div class="iw"><input type="text" id="model" placeholder="DS4080φ70"></div>
+        <div class="iw"><input type="text" id="model" placeholder="DS4080φ70 など自由記述可"></div>
+        <div class="presets" id="model-presets">
+          <button type="button" class="preset-btn" onclick="setModel(this,'DS2260',5000000)">DS2260</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'DS4080',9400000)">DS4080</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'DS40150',15100000)">DS40150</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'TS2160',6100000)">TS2160</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'TS3280',13800000)">TS3280</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'TS32120',16500000)">TS32120</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'ES3280H',4000000)">ES3280H</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'ES4280H',5200000)">ES4280H</button>
+          <button type="button" class="preset-btn" onclick="setModel(this,'ES5280H',9400000)">ES5280H</button>
+        </div>
       </div>
       <div class="f">
         <label>素材名 / 材料名</label>
@@ -592,6 +611,13 @@
     </details>
   </div>
 
+  <button class="btn-recalc" onclick="calc()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+    </svg>
+    再計算
+  </button>
   <button class="btn-print" onclick="doPrint()">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
       <polyline points="6 9 6 2 18 2 18 9"/>
@@ -681,6 +707,15 @@
     parent.querySelectorAll('.preset-btn').forEach(btn => {
       btn.classList.toggle('active', btn.textContent.includes(val));
     });
+    calc();
+  }
+
+  function setModel(btn, name, price) {
+    $('model').value = name;
+    $('equip').value = price;
+    document.querySelectorAll('#model-presets .preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    syncEquipTax();
     calc();
   }
 
@@ -936,7 +971,12 @@
     $(id)?.addEventListener('input', calc)
   );
 
-  ['company','category','model','material','install','subsidy',
+  $('model').addEventListener('input', () => {
+    document.querySelectorAll('#model-presets .preset-btn').forEach(b => b.classList.remove('active'));
+    calc();
+  });
+
+  ['company','category','material','install','subsidy',
    'purch-save','other-save'].forEach(id =>
     $(id)?.addEventListener('input', calc)
   );
